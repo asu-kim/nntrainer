@@ -61,10 +61,10 @@ if get_option('enable-fp16')
   endif
 endif
 
-if get_option('enable-fp16')
+#if get_option('enable-fp16')
   tensor_headers += 'half_tensor.h'
   tensor_sources += 'half_tensor.cpp'
-endif
+#endif
 
 if get_option('enable-opencl')
   tensor_sources += cl_sources
