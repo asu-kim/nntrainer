@@ -134,53 +134,12 @@ float applyTKP(float *logits, int len, float temperature, unsigned int top_k,
   return top_indices_and_logits[0].second;
 }
 
-/**
- * @brief Apply repetition penalty to logits
- */
-void applyRepetitionPenalty(float *logits, unsigned int *input_ids,
-                            unsigned int NUM_INPUT_IDS,
-                            float repetition_penalty = 1) {
-  for (unsigned int i = 0; i < NUM_INPUT_IDS; ++i) {
-    if (logits[input_ids[i]] < 0) {
-      logits[input_ids[i]] *= repetition_penalty;
-    } else {
-      logits[input_ids[i]] /= repetition_penalty;
-    }
-  }
-}
-
-/**
- * @brief Apply bad words penalty
- */
-void applyBadWordsPenalty(float *logits, unsigned int *bad_words_ids,
-                          unsigned int NUM_BAD_WORDS_IDS) {
-  for (unsigned int i = 0; i < NUM_BAD_WORDS_IDS; ++i) {
-    logits[bad_words_ids[i]] = -INFINITY;
-  }
-}
-
-std::vector<int> generate(float *logits, unsigned int NUM_VOCAB = 0,
-                          unsigned int NUM_BATCH = 1, bool do_sample = false,
+std::vector<int> generate(float *logits, bool do_sample = false,
                           float temperature = 1, unsigned int top_k = 1,
-                          float top_p = 1, float repetition_penalty = 1,
-                          unsigned int *input_ids = nullptr,
-                          unsigned int NUM_INPUT_IDS = 0,
-                          unsigned int *bad_words_ids = nullptr,
-                          unsigned int NUM_BAD_WORDS_IDS = 0) {
+                          float top_p = 0, unsigned int NUM_BATCH = 1,
+                          unsigned int NUM_VOCAB = 96000) {
   std::vector<int> outputs;
   for (unsigned int iteration = 0; iteration < NUM_BATCH; ++iteration) {
-
-    // apply repetition penalty
-    if (repetition_penalty != 1 && input_ids != nullptr && NUM_INPUT_IDS != 0) {
-      applyRepetitionPenalty(logits, input_ids, NUM_INPUT_IDS,
-                             repetition_penalty);
-    }
-
-    // apply bad words penalty
-    if (bad_words_ids != nullptr && NUM_BAD_WORDS_IDS != 0) {
-      applyBadWordsPenalty(logits, bad_words_ids, NUM_BAD_WORDS_IDS);
-    }
-
     // return argmax if do_sample is false
     if (do_sample == false) {
       int argmax_idx =
@@ -189,6 +148,7 @@ std::vector<int> generate(float *logits, unsigned int NUM_VOCAB = 0,
     } else {
       // apply temperature & top-k & top-p to logits
       float max_logits = applyTKP(logits, NUM_VOCAB, temperature, top_k, top_p);
+
       // transform logits to softmax
       float sum_exp_logits = 0;
       for (unsigned int i = 0; i < NUM_VOCAB; i++) {
@@ -213,7 +173,6 @@ std::vector<int> generate(float *logits, unsigned int NUM_VOCAB = 0,
 
     // set batch offset
     logits = logits + NUM_VOCAB;
-    input_ids = input_ids + batch_size;
   }
 
   return outputs;
@@ -595,7 +554,7 @@ void run(std::string text, bool apply_temperature) {
   for (unsigned int i = input_len + 1; i < input_len + NUM_TO_GENERATE; ++i) {
     auto output_interval =
       g_model->incremental_inference(1, input, label, MAX_SEQ_LEN, i - 1, i);
-    unsigned int ids = generate(output[0], NUM_VOCAB)[0];
+    unsigned int ids = generate(output[0], true, 1, 1, 0, 1, NUM_VOCAB)[0];
 
     if (i < input_len) {
       input_sample[0] = static_cast<float>(init_input[i]);
@@ -676,8 +635,8 @@ std::wstring decodeUnicodeEscape(const std::wstring &input) {
 #endif
 int main(int argc, char *argv[]) {
   // Setting locale
-  std::locale::global(std::locale("ko_KR.UTF-8"));
-
+  //std::locale::global(std::locale("ko_KR.UTF-8"));
+  std::locale::global(std::locale("en_US.UTF-8"));
 #if defined(ENABLE_ENCODER2)
   // Getting arguments From terminal
   std::wstring input;
@@ -688,7 +647,7 @@ int main(int argc, char *argv[]) {
 #else
   std::string text = "This is smaple input for LLaMA.";
 #endif
-
+  std::cout << "text is [" << text << "]" << std::endl;
   auto &app_context = nntrainer::AppContext::Global();
   try {
     app_context.registerFactory(nntrainer::createLayer<custom::SwiGLULayer>);
@@ -697,7 +656,7 @@ int main(int argc, char *argv[]) {
               << std::endl;
     return 1;
   }
-
+  std::cout << "HERE 11111" << std::endl;
   try {
     app_context.registerFactory(nntrainer::createLayer<custom::RMSNormLayer>);
   } catch (std::invalid_argument &e) {
@@ -705,16 +664,16 @@ int main(int argc, char *argv[]) {
               << std::endl;
     return 1;
   }
-
+  std::cout << "HERE 22222" << std::endl;
   try {
-    const std::vector<std::string> args(argv + 1, argv + argc);
+    //const std::vector<std::string> args(argv + 1, argv + argc);
 
-    bool apply_temp = (strcasecmp("true", args[1].c_str()) == 0);
-
+    //bool apply_temp = (strcasecmp("true", args[1].c_str()) == 0);
+    std::cout << "HERE 33333" << std::endl;
     createAndRun(epoch, batch_size);
-
-    run(text, apply_temp);
-
+    std::cout << "HERE 44444" << std::endl;
+    //run(text, apply_temp);
+    run(text, false);
   } catch (const std::exception &e) {
     std::cerr << "uncaught error while running! details: " << e.what()
               << std::endl;
