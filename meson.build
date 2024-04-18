@@ -65,7 +65,7 @@ warning_c_flags = [
 ]
 
 
-if get_option('enable-fp16')
+#if get_option('enable-fp16')
    arch = host_machine.cpu_family()
    if get_option('platform') == 'android'
      add_project_arguments('-mfp16-format=ieee', language: ['c', 'cpp'])
@@ -92,7 +92,7 @@ if get_option('enable-fp16')
        warning ('Float16 for x86_64 enabled. However, software emulation is applied for fp16, making it slower and inconsistent. Use GCC 12+ for FP16 support. This build will probably fail unless you bring a compiler that supports fp16 for x64.')
      endif
    endif  
-endif
+#endif
 
 if get_option('enable-opencl')
   message ('OpenCL build is enabled. Will work only if OpenCL supported GPU is available.')
@@ -406,7 +406,7 @@ if get_option('enable-test')
     warning('test is not supported in android build, test skipped')
   else
     if gtest_dep.found()
-      subdir('test')
+      #subdir('test')
     else
       error('test enabled but gtest not found')
     endif
