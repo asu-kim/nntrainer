@@ -9,6 +9,7 @@
  * @bug    No known bugs except for NYI items
  */
 
+#define ENABLE_ENCODER2
 #include <algorithm>
 #include <array>
 #include <chrono>
@@ -54,6 +55,7 @@ float const NORM_EPS = 0.000001;
 int const NUM_VOCAB = 96000;
 int MAX_SEQ_LEN = 1024;
 int NUM_TO_GENERATE = 100;
+//int NUM_TO_GENERATE = 5;
 
 constexpr unsigned int INIT_SEQ_LEN = 30;
 unsigned int batch_size = 1;
@@ -550,8 +552,9 @@ void run(std::string text, bool apply_temperature) {
   init_len = init_input.size();
 
   input_len = (init_len > INIT_SEQ_LEN) ? INIT_SEQ_LEN : init_len;
-
+  //std::cout << "input_len = " << input_len << std::endl;
   for (unsigned int i = 0; i < input_len; ++i) {
+    //std::cout << "i = " << i << std::endl;
     input_sample[i] = static_cast<float>(init_input[i]);
   }
 
@@ -676,7 +679,7 @@ std::wstring decodeUnicodeEscape(const std::wstring &input) {
 int main(int argc, char *argv[]) {
   // Setting locale
   std::locale::global(std::locale("ko_KR.UTF-8"));
-
+  auto start = std::chrono::high_resolution_clock::now();
 #if defined(ENABLE_ENCODER2)
   // Getting arguments From terminal
   std::wstring input;
@@ -706,20 +709,24 @@ int main(int argc, char *argv[]) {
   }
 
   try {
-    const std::vector<std::string> args(argv + 1, argv + argc);
+    //const std::vector<std::string> args(argv + 1, argv + argc);
 
-    bool apply_temp = (strcasecmp("true", args[1].c_str()) == 0);
-
+    //bool apply_temp = (strcasecmp("true", args[1].c_str()) == 0);
+    std::cout << "[BEGIN] createAndRun()" << std::endl;
     createAndRun(epoch, batch_size);
 
-    run(text, apply_temp);
-
+    std::cout << "[BEGIN] run()" << std::endl;
+    // run(text, apply_temp);
+    run(text, true);
+    std::cout << "[END] run()" << std::endl;
   } catch (const std::exception &e) {
     std::cerr << "uncaught error while running! details: " << e.what()
               << std::endl;
     return EXIT_FAILURE;
   }
-
+  auto end = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> duration = end - start;
+  std::cout << "Execution time of myFunction: " << duration.count() << " seconds" << std::endl;
   int status = EXIT_SUCCESS;
   return status;
 }
