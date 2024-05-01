@@ -25,6 +25,7 @@ extra_defines = ['-DMIN_CPP_VERSION=201703L']
 cc = meson.get_compiler('c')
 cxx = meson.get_compiler('cpp')
 
+message ('platform: @0@'.format(get_option('platform')))
 if get_option('platform') == 'tizen'
   # Pass __TIZEN__ to the compiler
   add_project_arguments('-D__TIZEN__=1', language:['c','cpp'])
@@ -64,7 +65,7 @@ warning_c_flags = [
   '-Wno-error=varargs'
 ]
 
-
+message ('enable-fp16: @0@'.format(get_option('enable-fp16')))
 if get_option('enable-fp16')
    arch = host_machine.cpu_family()
    if get_option('platform') == 'android'
