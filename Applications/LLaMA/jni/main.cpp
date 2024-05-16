@@ -52,12 +52,13 @@ int const NUM_HEADS = 18;
 int const MULTIPLE_OF = 256;
 
 float const NORM_EPS = 0.000001;
+float const EPS = 0.000001;
 int const NUM_VOCAB = 96000;
 int MAX_SEQ_LEN = 1024;
 int NUM_TO_GENERATE = 100;
 //int NUM_TO_GENERATE = 5;
 
-constexpr unsigned int INIT_SEQ_LEN = 30;
+constexpr unsigned int INIT_SEQ_LEN = 28;
 unsigned int batch_size = 1;
 unsigned int epoch = 1;
 
@@ -215,6 +216,40 @@ std::vector<int> generate(float *logits, unsigned int NUM_VOCAB = 0,
     // set batch offset
     logits = logits + NUM_VOCAB;
     input_ids = input_ids + batch_size;
+  }
+
+  return outputs;
+}
+
+std::vector<int> generate_multi_tokens(
+  float *logits, unsigned int NUM_VOCAB = 0, unsigned int NUM_TARGET_TOKENS = 1,
+  float repetition_penalty = 1, unsigned int *input_ids = nullptr,
+  unsigned int NUM_INPUT_IDS = 0, unsigned int *bad_words_ids = nullptr,
+  unsigned int NUM_BAD_WORDS_IDS = 0) {
+  std::vector<int> outputs;
+  // apply repetition penalty
+  if (abs(repetition_penalty - 1) < EPS && input_ids != nullptr &&
+      NUM_INPUT_IDS != 0) {
+    applyRepetitionPenalty(logits, input_ids, NUM_INPUT_IDS,
+                           repetition_penalty);
+  }
+
+  // apply bad words penalty
+  if (bad_words_ids != nullptr && NUM_BAD_WORDS_IDS != 0) {
+    applyBadWordsPenalty(logits, bad_words_ids, NUM_BAD_WORDS_IDS);
+  }
+
+  // Sort and generate multiple tokens
+  std::vector<std::pair<int, float>> top_indices_and_logits;
+  for (unsigned int i = 0; i < NUM_VOCAB; ++i) {
+    top_indices_and_logits.push_back({i, logits[i]});
+  }
+  sort(top_indices_and_logits.begin(), top_indices_and_logits.end(),
+       [](auto &a, auto &b) { return a.second > b.second; });
+
+  // add sampled words
+  for (unsigned int i = 0; i < NUM_TARGET_TOKENS; ++i) {
+    outputs.push_back(top_indices_and_logits[i].first);
   }
 
   return outputs;
@@ -564,7 +599,7 @@ void run(std::string text, bool apply_temperature) {
   float init_input[INIT_SEQ_LEN] = {
     0,  1,  2,  3,  4,  5,   6,   7,   8,   9,   10,  20,  30,  40,
     50, 60, 70, 80, 90, 100, 200, 300, 400, 500, 600, 700, 800, 900};
-  ((uint *)(input_sample))[0] = init_input[0];
+  memcpy(input_sample, init_input, sizeof(float) * INIT_SEQ_LEN);
   input.push_back(input_sample);
   init_len = 18;
 #endif

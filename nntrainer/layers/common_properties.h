@@ -39,6 +39,7 @@ enum class ActivationType {
   ACT_SOFTPLUS,   /**< softplus */
   ACT_LEAKY_RELU, /**< Leaky ReLU */
   ACT_ELU,        /**< ELU */
+  ACT_SELU,       /**< SELU */
   ACT_MISH,       /**< Mish */
   ACT_NONE,       /**< no op */
   ACT_UNKNOWN     /**< unknown */
@@ -1365,6 +1366,16 @@ public:
   static constexpr const char *key =
     "clip_grad_by_norm";           /**< unique key to access */
   using prop_tag = float_prop_tag; /**< property type */
+};
+
+/**
+ * @brief properties for getting the loss scale value to mixed precision
+ *
+ */
+class LossScaleForMixed : public Property<float> {
+public:
+  static constexpr const char *key = "loss_scale"; /**< unique key to access */
+  using prop_tag = float_prop_tag;                 /**< property type */
 };
 
 /**
