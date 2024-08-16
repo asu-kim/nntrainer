@@ -1,8 +1,10 @@
+## Clone ToG repo
 ```
 git clone https://github.com/IDEA-FinAI/ToG.git
 cd Freebase
 ```
 
+## Download Freebase data
 Download freebase dump and unzip it.
 ```
 wget https://commondatastorage.googleapis.com/freebase-public/rdf/freebase-rdf-latest.gz
@@ -34,3 +36,57 @@ rdf_loader_run();
 
 However, the `ld_dir` and `rdf_loader_run()` seems to fail.
 
+### Requirements for testing.
+```
+pip3 install SPARQLWrapper
+```
+### Testing
+Save test example below as test.py
+```
+import json
+from SPARQLWrapper import SPARQLWrapper, JSON
+
+SPARQLPATH = "http://localhost:8890/sparql"
+
+def test():
+    try:
+        sparql = SPARQLWrapper(SPARQLPATH)
+        sparql_txt = """PREFIX ns: <http://rdf.freebase.com/ns/>
+            SELECT distinct ?name3
+            WHERE {
+            ns:m.0k2kfpc ns:award.award_nominated_work.award_nominations ?e1.
+            ?e1 ns:award.award_nomination.award_nominee ns:m.02pbp9.
+            ns:m.02pbp9 ns:people.person.spouse_s ?e2.
+            ?e2 ns:people.marriage.spouse ?e3.
+            ?e2 ns:people.marriage.from ?e4.
+            ?e3 ns:type.object.name ?name3
+            MINUS{?e2 ns:type.object.name ?name2}
+            }
+        """
+        #print(sparql_txt)
+        sparql.setQuery(sparql_txt)
+        sparql.setReturnFormat(JSON)
+        results = sparql.query().convert()
+        print(results)
+    except:
+        print('Your database is not installed properly !!!')
+
+test()
+
+```
+
+## Move to ToG/ToG
+```
+cd root/ToG/ToG
+```
+
+### requirements.
+
+```
+pip3 install tqdm openai rank_bm25 sentence_transformers bs4
+```
+
+### Run
+```
+python3 main_freebase.py --max_length 256 --temperature_exploration 0.4 --temperature_reasoning 0 --width 3 --depth 3 --remove_unnecessary_rel True --LLM_type llama --num_retain_entity 5 --prune_tools llm
+```
